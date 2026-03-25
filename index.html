@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ink-Wise — Computational Drawing</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header>
+      <div class="logo">Ink<span>-</span>Wise</div>
+      <div class="tagline">사진을 펜 드로잉으로 · computational drawing</div>
+    </header>
+
+    <!-- Main -->
+    <div class="main">
+
+      <!-- Controls -->
+      <aside class="controls">
+
+        <!-- Upload -->
+        <div class="ctrl-section">
+          <div class="ctrl-label">Image</div>
+          <div class="upload-area" id="upload-area">
+            <input type="file" id="file-input" accept="image/*" />
+            <div>Drop image here<br />or click to browse</div>
+          </div>
+        </div>
+
+        <!-- Style -->
+        <div class="ctrl-section">
+          <div class="ctrl-label">Style</div>
+          <div class="btn-group">
+            <button class="style-btn active" data-style="ink">Ink</button>
+            <button class="style-btn" data-style="blueprint">Blueprint</button>
+            <button class="style-btn" data-style="pencil">Pencil</button>
+          </div>
+        </div>
+
+        <!-- Animation mode -->
+        <div class="ctrl-section">
+          <div class="ctrl-label">Animation</div>
+          <div class="btn-group">
+            <button class="mode-btn active" data-mode="pathtrace">Path Trace</button>
+            <button class="mode-btn" data-mode="scanline">Scanline</button>
+            <button class="mode-btn" data-mode="radial">Radial</button>
+          </div>
+        </div>
+
+        <!-- Edge threshold -->
+        <div class="ctrl-section">
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Edge Threshold</span>
+              <span class="slider-val" id="threshold-val">40</span>
+            </div>
+            <input type="range" id="threshold" min="20" max="150" value="40" />
+          </div>
+        </div>
+
+        <!-- Hatching density -->
+        <div class="ctrl-section">
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Hatch Density</span>
+              <span class="slider-val" id="hatch-val">40</span>
+            </div>
+            <input type="range" id="hatch-density" min="0" max="100" value="40" />
+          </div>
+        </div>
+
+        <!-- Speed -->
+        <div class="ctrl-section">
+          <div class="slider-row">
+            <div class="slider-header">
+              <span>Speed</span>
+              <span class="slider-val" id="speed-val">2</span>
+            </div>
+            <input type="range" id="speed" min="1" max="5" value="2" step="1" />
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="ctrl-section">
+          <button class="action-btn" id="replay-btn">↩ Replay</button>
+          <button class="action-btn accent" id="download-btn">↓ Download PNG</button>
+        </div>
+
+      </aside>
+
+      <!-- Canvas area -->
+      <div class="canvas-area">
+        <div class="canvas-pane">
+          <div class="pane-label">Original</div>
+          <div class="canvas-wrap">
+            <canvas id="canvas-original"></canvas>
+            <div class="empty-state" id="empty-original">no image</div>
+          </div>
+        </div>
+        <div class="canvas-pane">
+          <div class="pane-label">Ink-Wise</div>
+          <div class="canvas-wrap">
+            <canvas id="canvas-result"></canvas>
+            <div class="empty-state" id="empty-result">awaiting input</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer / Status bar -->
+    <footer>
+      <div class="status-info" id="status-info">ready</div>
+      <div class="progress-wrap">
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-bar"></div>
+        </div>
+        <div class="progress-text" id="progress-text">0%</div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
