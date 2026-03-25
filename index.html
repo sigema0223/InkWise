@@ -1,129 +1,795 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ink-Wise — Computational Drawing</title>
-  <link rel="stylesheet" href="styles/main.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ink-Wise — Computational Drawing</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Serif+KR:wght@300;400&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f5f0e8;
+  --border: #d0c8bc;
+  --text: #1a1a1a;
+  --muted: #888;
+  --accent: #c0392b;
+  --mono: 'Space Mono', monospace;
+  --serif: 'Noto Serif KR', serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.header {
+  padding: 22px 40px 12px;
+  border-bottom: 1px solid var(--text);
+  margin: 0 40px;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.header h1 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+}
+.header h1 span { color: var(--accent); }
+.header p {
+  font-family: var(--serif);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── Controls ───────────────────────────────────────────── */
+.controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 40px;
+  border-bottom: 1px solid var(--border);
+}
+
+.btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 6px 16px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+.btn-fill { background: var(--text); color: var(--bg); }
+.btn-fill:hover { background: #333; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+.sep { width: 1px; height: 22px; background: var(--border); }
+
+.btn-group { display: flex; gap: 4px; }
+.tog-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 5px 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  transition: all 0.15s;
+}
+.tog-btn:hover { border-color: var(--text); color: var(--text); }
+.tog-btn.active { background: var(--text); border-color: var(--text); color: var(--bg); }
+
+.slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.slider-wrap label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  min-width: 38px;
+}
+.slider-wrap .val {
+  font-size: 9px;
+  color: var(--text);
+  font-weight: 700;
+  min-width: 16px;
+}
+input[type=range] {
+  -webkit-appearance: none;
+  width: 76px; height: 1.5px;
+  background: var(--border); outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--text); cursor: pointer;
+}
+
+/* ── Canvas area ────────────────────────────────────────── */
+.canvas-area {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 24px 40px;
+  gap: 24px;
+  min-height: 0;
+}
+
+.canvas-panel { display: flex; flex-direction: column; gap: 8px; }
+
+.pane-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.canvas-wrap {
+  flex: 1;
+  position: relative;
+  border: 1px solid var(--border);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 360px;
+  overflow: hidden;
+}
+
+.canvas-wrap canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 540px;
+}
+
+.placeholder {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #ccc;
+  text-align: center;
+  padding: 40px;
+  text-transform: uppercase;
+}
+
+/* Pen dot */
+.pen-dot {
+  position: absolute;
+  width: 7px; height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+  display: none;
+  z-index: 10;
+  box-shadow: 0 0 8px rgba(192,57,43,0.5);
+  transform: translate(-50%, -50%);
+}
+
+/* Status bar */
+.status-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 26px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  background: rgba(245,240,232,0.92);
+  border-top: 1px solid var(--border);
+}
+.status-txt {
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.progress-track {
+  flex: 1; height: 1.5px;
+  background: var(--border);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; width: 0;
+  background: var(--text);
+  transition: width 0.05s linear;
+}
+
+/* Action row */
+.action-row {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+.footer {
+  padding: 10px 40px;
+  border-top: 1px solid var(--border);
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-transform: uppercase;
+  display: flex;
+  gap: 24px;
+}
+.stats-txt { color: var(--muted); }
+
+@media (max-width: 768px) {
+  .canvas-area { grid-template-columns: 1fr; padding: 16px; }
+  .controls { padding: 12px 16px; }
+  .header { margin: 0 16px; padding: 16px 0 10px; }
+}
+</style>
 </head>
 <body>
-  <div class="app">
 
-    <!-- Header -->
-    <header>
-      <div class="logo">Ink<span>-</span>Wise</div>
-      <div class="tagline">사진을 펜 드로잉으로 · computational drawing</div>
-    </header>
+<div class="header">
+  <h1>Ink<span>-</span>Wise</h1>
+  <p>사진을 펜 드로잉으로 · computational drawing</p>
+</div>
 
-    <!-- Main -->
-    <div class="main">
+<div class="controls">
+  <!-- Upload -->
+  <label class="btn btn-fill" for="fileInput">Upload</label>
+  <input type="file" id="fileInput" accept="image/*" style="display:none">
 
-      <!-- Controls -->
-      <aside class="controls">
+  <div class="sep"></div>
 
-        <!-- Upload -->
-        <div class="ctrl-section">
-          <div class="ctrl-label">Image</div>
-          <div class="upload-area" id="upload-area">
-            <input type="file" id="file-input" accept="image/*" />
-            <div>Drop image here<br />or click to browse</div>
-          </div>
-        </div>
-
-        <!-- Style -->
-        <div class="ctrl-section">
-          <div class="ctrl-label">Style</div>
-          <div class="btn-group">
-            <button class="style-btn active" data-style="ink">Ink</button>
-            <button class="style-btn" data-style="blueprint">Blueprint</button>
-            <button class="style-btn" data-style="pencil">Pencil</button>
-          </div>
-        </div>
-
-        <!-- Animation mode -->
-        <div class="ctrl-section">
-          <div class="ctrl-label">Animation</div>
-          <div class="btn-group">
-            <button class="mode-btn active" data-mode="pathtrace">Path Trace</button>
-            <button class="mode-btn" data-mode="scanline">Scanline</button>
-            <button class="mode-btn" data-mode="radial">Radial</button>
-          </div>
-        </div>
-
-        <!-- Edge threshold -->
-        <div class="ctrl-section">
-          <div class="slider-row">
-            <div class="slider-header">
-              <span>Edge Threshold</span>
-              <span class="slider-val" id="threshold-val">40</span>
-            </div>
-            <input type="range" id="threshold" min="20" max="150" value="40" />
-          </div>
-        </div>
-
-        <!-- Hatching density -->
-        <div class="ctrl-section">
-          <div class="slider-row">
-            <div class="slider-header">
-              <span>Hatch Density</span>
-              <span class="slider-val" id="hatch-val">40</span>
-            </div>
-            <input type="range" id="hatch-density" min="0" max="100" value="40" />
-          </div>
-        </div>
-
-        <!-- Speed -->
-        <div class="ctrl-section">
-          <div class="slider-row">
-            <div class="slider-header">
-              <span>Speed</span>
-              <span class="slider-val" id="speed-val">2</span>
-            </div>
-            <input type="range" id="speed" min="1" max="5" value="2" step="1" />
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="ctrl-section">
-          <button class="action-btn" id="replay-btn">↩ Replay</button>
-          <button class="action-btn accent" id="download-btn">↓ Download PNG</button>
-        </div>
-
-      </aside>
-
-      <!-- Canvas area -->
-      <div class="canvas-area">
-        <div class="canvas-pane">
-          <div class="pane-label">Original</div>
-          <div class="canvas-wrap">
-            <canvas id="canvas-original"></canvas>
-            <div class="empty-state" id="empty-original">no image</div>
-          </div>
-        </div>
-        <div class="canvas-pane">
-          <div class="pane-label">Ink-Wise</div>
-          <div class="canvas-wrap">
-            <canvas id="canvas-result"></canvas>
-            <div class="empty-state" id="empty-result">awaiting input</div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Footer / Status bar -->
-    <footer>
-      <div class="status-info" id="status-info">ready</div>
-      <div class="progress-wrap">
-        <div class="progress-track">
-          <div class="progress-fill" id="progress-bar"></div>
-        </div>
-        <div class="progress-text" id="progress-text">0%</div>
-      </div>
-    </footer>
-
+  <!-- Style -->
+  <div class="btn-group" id="styleBtns">
+    <button class="tog-btn active" data-style="ink">Ink</button>
+    <button class="tog-btn" data-style="blueprint">Blueprint</button>
+    <button class="tog-btn" data-style="pencil">Pencil</button>
   </div>
 
-  <script type="module" src="src/app.js"></script>
+  <div class="sep"></div>
+
+  <!-- Animation mode -->
+  <div class="btn-group" id="modeBtns">
+    <button class="tog-btn active" data-mode="pathtrace">Path Trace</button>
+    <button class="tog-btn" data-mode="scanline">Scanline</button>
+    <button class="tog-btn" data-mode="radial">Radial</button>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- Sliders -->
+  <div class="slider-wrap">
+    <label>Edge</label>
+    <input type="range" id="edgeSlider" min="20" max="150" value="55">
+    <span class="val" id="edgeVal">55</span>
+  </div>
+  <div class="slider-wrap">
+    <label>Hatch</label>
+    <input type="range" id="hatchSlider" min="0" max="100" value="35">
+    <span class="val" id="hatchVal">35</span>
+  </div>
+  <div class="slider-wrap">
+    <label>Speed</label>
+    <input type="range" id="speedSlider" min="1" max="5" value="3" step="1">
+    <span class="val" id="speedVal">3</span>
+  </div>
+</div>
+
+<div class="canvas-area">
+  <!-- Original -->
+  <div class="canvas-panel">
+    <div class="pane-label">Original</div>
+    <div class="canvas-wrap" id="origWrap">
+      <div class="placeholder" id="origPlaceholder">Drop image here or click Upload</div>
+      <canvas id="origCanvas" style="display:none"></canvas>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="canvas-panel">
+    <div class="pane-label">Ink-Wise</div>
+    <div class="canvas-wrap" id="resultWrap">
+      <div class="placeholder" id="resultPlaceholder">Awaiting input…</div>
+      <canvas id="resultCanvas" style="display:none"></canvas>
+      <div class="pen-dot" id="penDot"></div>
+      <div class="status-bar" id="statusBar">
+        <span class="status-txt" id="statusTxt">Ready</span>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <span class="status-txt" id="countTxt">0 / 0</span>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-outline" id="replayBtn" style="display:none" onclick="run()">↩ Replay</button>
+      <button class="btn btn-outline" id="dlBtn" style="display:none" onclick="download()">↓ Download PNG</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <span class="stats-txt" id="statsTxt">ready</span>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let currentImg = null;
+let rafId = null;
+let gray = null, edgeMag = null;
+let cW = 0, cH = 0;
+let currentStyle = 'ink';
+let currentMode = 'pathtrace';
+
+const STYLES = {
+  ink:       { bg: '#f5f0e8', line: '#1a1a1a', hatch: '#444' },
+  blueprint: { bg: '#1a2744', line: '#5fa8d3', hatch: '#3d7aab' },
+  pencil:    { bg: '#f8f6f0', line: '#555',    hatch: '#888' },
+};
+
+// ── DOM ────────────────────────────────────────────────────────────────────
+const fileInput     = document.getElementById('fileInput');
+const origCanvas    = document.getElementById('origCanvas');
+const resultCanvas  = document.getElementById('resultCanvas');
+const origCtx       = origCanvas.getContext('2d');
+const resCtx        = resultCanvas.getContext('2d');
+const origWrap      = document.getElementById('origWrap');
+const resultWrap    = document.getElementById('resultWrap');
+const penDot        = document.getElementById('penDot');
+const statusBar     = document.getElementById('statusBar');
+const statusTxt     = document.getElementById('statusTxt');
+const progressFill  = document.getElementById('progressFill');
+const countTxt      = document.getElementById('countTxt');
+const statsTxt      = document.getElementById('statsTxt');
+
+// ── Sliders ────────────────────────────────────────────────────────────────
+const edgeSlider  = document.getElementById('edgeSlider');
+const hatchSlider = document.getElementById('hatchSlider');
+const speedSlider = document.getElementById('speedSlider');
+edgeSlider.addEventListener('input', () => { document.getElementById('edgeVal').textContent = edgeSlider.value; if (currentImg) run(); });
+hatchSlider.addEventListener('input', () => { document.getElementById('hatchVal').textContent = hatchSlider.value; if (currentImg) run(); });
+speedSlider.addEventListener('input', () => { document.getElementById('speedVal').textContent = speedSlider.value; });
+
+// ── Style / Mode toggles ───────────────────────────────────────────────────
+document.getElementById('styleBtns').addEventListener('click', e => {
+  const btn = e.target.closest('.tog-btn');
+  if (!btn) return;
+  document.querySelectorAll('#styleBtns .tog-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentStyle = btn.dataset.style;
+  if (currentImg) run();
+});
+document.getElementById('modeBtns').addEventListener('click', e => {
+  const btn = e.target.closest('.tog-btn');
+  if (!btn) return;
+  document.querySelectorAll('#modeBtns .tog-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentMode = btn.dataset.mode;
+  if (currentImg) run();
+});
+
+// ── File input ─────────────────────────────────────────────────────────────
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) loadFile(fileInput.files[0]);
+});
+origWrap.addEventListener('dragover', e => e.preventDefault());
+origWrap.addEventListener('drop', e => {
+  e.preventDefault();
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => { currentImg = img; drawOriginal(); run(); };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function drawOriginal() {
+  const maxW = 700, maxH = 540;
+  let w = currentImg.width, h = currentImg.height;
+  const scale = Math.min(maxW / w, maxH / h, 1);
+  origCanvas.width  = Math.round(w * scale);
+  origCanvas.height = Math.round(h * scale);
+  origCtx.drawImage(currentImg, 0, 0, origCanvas.width, origCanvas.height);
+  origCanvas.style.display = 'block';
+  document.getElementById('origPlaceholder').style.display = 'none';
+}
+
+// ── Pipeline ───────────────────────────────────────────────────────────────
+function run() {
+  if (!currentImg) return;
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  penDot.style.display = 'none';
+
+  cW = origCanvas.width;
+  cH = origCanvas.height;
+
+  // Grayscale + blur + edge
+  const pixels = origCtx.getImageData(0, 0, cW, cH).data;
+  gray = new Float32Array(cW * cH);
+  for (let i = 0; i < cW * cH; i++)
+    gray[i] = 0.299 * pixels[i*4] + 0.587 * pixels[i*4+1] + 0.114 * pixels[i*4+2];
+  const blurred = gaussBlur(gray, cW, cH, 2);
+  const rawEdge = sobel(blurred, cW, cH);
+  const thresh  = parseInt(edgeSlider.value);
+  edgeMag = new Float32Array(cW * cH);
+  for (let i = 0; i < edgeMag.length; i++)
+    edgeMag[i] = rawEdge[i] > thresh ? Math.min(rawEdge[i] / 220, 1) : 0;
+
+  const edgePaths  = extractPaths();
+  const hatchLines = buildHatch();
+
+  // Setup result canvas
+  resultCanvas.width  = cW;
+  resultCanvas.height = cH;
+  resultCanvas.style.display = 'block';
+  document.getElementById('resultPlaceholder').style.display = 'none';
+  statusBar.style.display = 'flex';
+  document.getElementById('replayBtn').style.display = 'none';
+  document.getElementById('dlBtn').style.display = 'none';
+
+  statsTxt.textContent = `${edgePaths.length} edge paths · ${hatchLines.length} hatch strokes`;
+
+  const col = STYLES[currentStyle];
+  resCtx.fillStyle = col.bg;
+  resCtx.fillRect(0, 0, cW, cH);
+
+  if (currentMode === 'pathtrace') animatePathTrace(edgePaths, hatchLines, col);
+  else if (currentMode === 'scanline') animateScanline(edgePaths, hatchLines, col);
+  else animateRadial(edgePaths, hatchLines, col);
+}
+
+// ── Path extraction ────────────────────────────────────────────────────────
+function extractPaths() {
+  const w = cW, h = cH;
+  const visited = new Uint8Array(w * h);
+  const paths = [];
+  const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
+  const pixels = [];
+  for (let y = 1; y < h-1; y++)
+    for (let x = 1; x < w-1; x++)
+      if (edgeMag[y*w+x] > 0) pixels.push({ x, y, s: edgeMag[y*w+x] });
+  pixels.sort((a, b) => b.s - a.s);
+
+  for (const start of pixels) {
+    if (visited[start.y * w + start.x]) continue;
+    const path = [];
+    let cx = start.x, cy = start.y;
+
+    while (true) {
+      if (cx < 0 || cx >= w || cy < 0 || cy >= h) break;
+      const idx = cy * w + cx;
+      if (visited[idx] || edgeMag[idx] <= 0) break;
+      visited[idx] = 1;
+      path.push({ x: cx, y: cy });
+
+      let bestX = -1, bestY = -1, bestScore = -1;
+      for (const [dy, dx] of dirs) {
+        const nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+        const ni = ny * w + nx;
+        if (visited[ni] || edgeMag[ni] <= 0) continue;
+        let score = edgeMag[ni];
+        if (path.length >= 2) {
+          const prev = path[path.length - 2];
+          if (dx === cx - prev.x && dy === cy - prev.y) score += 0.3;
+        }
+        if (score > bestScore) { bestScore = score; bestX = nx; bestY = ny; }
+      }
+      if (bestX < 0) break;
+      cx = bestX; cy = bestY;
+    }
+
+    if (path.length >= 4) {
+      const avgS = path.reduce((s, p) => s + edgeMag[p.y * w + p.x], 0) / path.length;
+      paths.push({ pts: path, strength: avgS });
+    }
+  }
+
+  paths.sort((a, b) => b.strength - a.strength);
+  return paths;
+}
+
+// ── Hatch lines ────────────────────────────────────────────────────────────
+function buildHatch() {
+  const density = parseInt(hatchSlider.value) / 100;
+  if (density <= 0) return [];
+  const w = cW, h = cH;
+  const step = Math.max(3, Math.round(18 - density * 14));
+  const lines = [];
+
+  for (let d = -h; d < w + h; d += step) {
+    const pts = [];
+    for (let x = 0; x < w; x++) {
+      const y = x - d;
+      if (y < 0 || y >= h) continue;
+      if (gray[Math.round(y) * w + Math.round(x)] < 155) pts.push({ x, y });
+    }
+    if (pts.length >= 2) lines.push({ pts, type: 1 });
+  }
+
+  for (let d = 0; d < w + h; d += step) {
+    const pts = [];
+    for (let x = 0; x < w; x++) {
+      const y = d - x;
+      if (y < 0 || y >= h) continue;
+      if (gray[Math.round(y) * w + Math.round(x)] < 80) pts.push({ x, y });
+    }
+    if (pts.length >= 2) lines.push({ pts, type: 2 });
+  }
+
+  return lines;
+}
+
+// ── Pen dot helper ─────────────────────────────────────────────────────────
+function movePenDot(cx, cy) {
+  // Map canvas coords → wrapper-relative screen coords
+  const canvasRect  = resultCanvas.getBoundingClientRect();
+  const wrapRect    = resultWrap.getBoundingClientRect();
+  const scaleX = canvasRect.width  / resultCanvas.width;
+  const scaleY = canvasRect.height / resultCanvas.height;
+  penDot.style.left = (canvasRect.left - wrapRect.left + cx * scaleX) + 'px';
+  penDot.style.top  = (canvasRect.top  - wrapRect.top  + cy * scaleY) + 'px';
+}
+
+// ── Animate: Path Trace ────────────────────────────────────────────────────
+function animatePathTrace(edgePaths, hatchLines, col) {
+  const speedVal = parseInt(speedSlider.value);
+  const ptsPerFrame = [25, 70, 180, 500, 1400][speedVal - 1];
+
+  const segments = [
+    ...edgePaths.map(p => ({ pts: p.pts, lw: 0.6 + p.strength * 1.4, color: col.line, alpha: 0.88 })),
+    ...hatchLines.map(l => ({ pts: l.pts, lw: 0.4, color: col.hatch, alpha: 0.5 })),
+  ];
+  const total = segments.length;
+  let si = 0, pi = 0;
+
+  penDot.style.display = 'block';
+
+  function frame() {
+    if (si >= total) { finishAnim(); return; }
+
+    let drawn = 0;
+    while (si < total && drawn < ptsPerFrame) {
+      const seg = segments[si];
+      const pts = seg.pts;
+
+      resCtx.strokeStyle = seg.color;
+      resCtx.lineWidth   = seg.lw;
+      resCtx.lineCap     = 'round';
+      resCtx.lineJoin    = 'round';
+      resCtx.globalAlpha = seg.alpha;
+
+      if (pi === 0) {
+        resCtx.beginPath();
+        resCtx.moveTo(pts[0].x, pts[0].y);
+        pi = 1;
+      }
+
+      const end = Math.min(pts.length, pi + (ptsPerFrame - drawn));
+      for (let i = pi; i < end; i++) {
+        resCtx.lineTo(pts[i].x, pts[i].y);
+        drawn++;
+      }
+      resCtx.stroke();
+
+      if (end >= pts.length) {
+        si++; pi = 0;
+      } else {
+        pi = end;
+        movePenDot(pts[end - 1].x, pts[end - 1].y);
+        break;
+      }
+
+      if (si < total && segments[si].pts.length > 0) {
+        movePenDot(segments[si].pts[0].x, segments[si].pts[0].y);
+      }
+    }
+
+    resCtx.globalAlpha = 1;
+    setProgress(si / total, si, total);
+    rafId = requestAnimationFrame(frame);
+  }
+
+  rafId = requestAnimationFrame(frame);
+}
+
+// ── Animate: Scanline ──────────────────────────────────────────────────────
+function animateScanline(edgePaths, hatchLines, col) {
+  // Pre-render full drawing to offscreen
+  const off = new OffscreenCanvas(cW, cH);
+  const offCtx = off.getContext('2d');
+  offCtx.fillStyle = col.bg;
+  offCtx.fillRect(0, 0, cW, cH);
+  renderAll(offCtx, edgePaths, hatchLines, col);
+  const full = offCtx.getImageData(0, 0, cW, cH);
+
+  const speedVal = parseInt(speedSlider.value);
+  const linesPerFrame = [1, 3, 7, 15, 30][speedVal - 1];
+  let y = 0;
+
+  penDot.style.display = 'block';
+
+  function frame() {
+    const end = Math.min(y + linesPerFrame, cH);
+    for (let row = y; row < end; row++) {
+      const slice = new ImageData(full.data.slice(row * cW * 4, (row + 1) * cW * 4), cW, 1);
+      resCtx.putImageData(slice, 0, row);
+    }
+    y = end;
+    movePenDot(cW / 2, y);
+    setProgress(y / cH, y, cH);
+    if (y >= cH) { finishAnim(); return; }
+    rafId = requestAnimationFrame(frame);
+  }
+  rafId = requestAnimationFrame(frame);
+}
+
+// ── Animate: Radial ────────────────────────────────────────────────────────
+function animateRadial(edgePaths, hatchLines, col) {
+  const off = new OffscreenCanvas(cW, cH);
+  const offCtx = off.getContext('2d');
+  offCtx.fillStyle = col.bg;
+  offCtx.fillRect(0, 0, cW, cH);
+  renderAll(offCtx, edgePaths, hatchLines, col);
+  const full = offCtx.getImageData(0, 0, cW, cH);
+  const fullPx = full.data;
+
+  const cx = cW / 2, cy = cH / 2;
+  const maxR = Math.ceil(Math.sqrt(cx * cx + cy * cy));
+  const speedVal = parseInt(speedSlider.value);
+  const rPerFrame = [2, 5, 11, 22, 45][speedVal - 1];
+  let r = 0;
+
+  penDot.style.display = 'block';
+
+  function frame() {
+    const endR = Math.min(r + rPerFrame, maxR);
+    const r2 = endR * endR;
+    const x0 = Math.max(0, Math.floor(cx - endR));
+    const x1 = Math.min(cW - 1, Math.ceil(cx + endR));
+    const y0 = Math.max(0, Math.floor(cy - endR));
+    const y1 = Math.min(cH - 1, Math.ceil(cy + endR));
+
+    const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+    const band = resCtx.createImageData(bw, bh);
+
+    for (let py = y0; py <= y1; py++) {
+      for (let px = x0; px <= x1; px++) {
+        const dx = px - cx, dy = py - cy;
+        if (dx*dx + dy*dy > r2) continue;
+        const si = (py * cW + px) * 4;
+        const di = ((py - y0) * bw + (px - x0)) * 4;
+        band.data[di]   = fullPx[si];
+        band.data[di+1] = fullPx[si+1];
+        band.data[di+2] = fullPx[si+2];
+        band.data[di+3] = 255;
+      }
+    }
+    resCtx.putImageData(band, x0, y0);
+
+    r = endR;
+    movePenDot(cx + endR * 0.7, cy);
+    setProgress(r / maxR, r, maxR);
+    if (r >= maxR) { finishAnim(); return; }
+    rafId = requestAnimationFrame(frame);
+  }
+  rafId = requestAnimationFrame(frame);
+}
+
+// ── Render all (for pre-bake) ──────────────────────────────────────────────
+function renderAll(ctx, edgePaths, hatchLines, col) {
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const p of edgePaths) {
+    const pts = p.pts;
+    if (pts.length < 2) continue;
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.strokeStyle = col.line;
+    ctx.lineWidth = 0.6 + p.strength * 1.4;
+    ctx.globalAlpha = 0.88;
+    ctx.stroke();
+  }
+  for (const l of hatchLines) {
+    const pts = l.pts;
+    if (pts.length < 2) continue;
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.strokeStyle = col.hatch;
+    ctx.lineWidth = 0.4;
+    ctx.globalAlpha = 0.5;
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // Paper texture
+  if (currentStyle !== 'blueprint') {
+    const id = ctx.getImageData(0, 0, cW, cH);
+    for (let i = 0; i < id.data.length; i += 4) {
+      const n = (Math.random() - 0.5) * 14;
+      id.data[i]   = clamp(id.data[i]   + n);
+      id.data[i+1] = clamp(id.data[i+1] + n);
+      id.data[i+2] = clamp(id.data[i+2] + n);
+    }
+    ctx.putImageData(id, 0, 0);
+  }
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function setProgress(ratio, cur, total) {
+  progressFill.style.width = (ratio * 100) + '%';
+  countTxt.textContent = `${cur} / ${total}`;
+}
+
+function finishAnim() {
+  rafId = null;
+  penDot.style.display = 'none';
+  progressFill.style.width = '100%';
+  statusTxt.textContent = 'Done';
+  document.getElementById('replayBtn').style.display = 'inline-block';
+  document.getElementById('dlBtn').style.display = 'inline-block';
+}
+
+function download() {
+  const a = document.createElement('a');
+  a.download = `inkwise-${currentStyle}.png`;
+  a.href = resultCanvas.toDataURL('image/png');
+  a.click();
+}
+
+function clamp(v) { return v < 0 ? 0 : v > 255 ? 255 : Math.round(v); }
+
+function gaussBlur(data, w, h, r) {
+  const sigma = r / 2 || 1;
+  const k = [];
+  let sum = 0;
+  for (let i = -r; i <= r; i++) { const v = Math.exp(-(i*i)/(2*sigma*sigma)); k.push(v); sum += v; }
+  for (let i = 0; i < k.length; i++) k[i] /= sum;
+  const tmp = new Float32Array(data.length);
+  const out = new Float32Array(data.length);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      let v = 0;
+      for (let i = -r; i <= r; i++) v += data[y*w + Math.min(Math.max(x+i,0),w-1)] * k[i+r];
+      tmp[y*w+x] = v;
+    }
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      let v = 0;
+      for (let i = -r; i <= r; i++) v += tmp[Math.min(Math.max(y+i,0),h-1)*w+x] * k[i+r];
+      out[y*w+x] = v;
+    }
+  return out;
+}
+
+function sobel(data, w, h) {
+  const e = new Float32Array(w * h);
+  for (let y = 1; y < h-1; y++)
+    for (let x = 1; x < w-1; x++) {
+      const gx = -data[(y-1)*w+(x-1)] + data[(y-1)*w+(x+1)]
+               - 2*data[y*w+(x-1)]   + 2*data[y*w+(x+1)]
+               - data[(y+1)*w+(x-1)] + data[(y+1)*w+(x+1)];
+      const gy = -data[(y-1)*w+(x-1)] - 2*data[(y-1)*w+x] - data[(y-1)*w+(x+1)]
+               +  data[(y+1)*w+(x-1)] + 2*data[(y+1)*w+x] + data[(y+1)*w+(x+1)];
+      e[y*w+x] = Math.sqrt(gx*gx + gy*gy);
+    }
+  return e;
+}
+</script>
 </body>
 </html>
