@@ -63,7 +63,6 @@ function setProgress(ratio, current, total) {
 }
 
 // ─── Upload handling ─────────────────────────────────────────────────────────
-uploadArea.addEventListener('click', () => fileInput.click());
 uploadArea.addEventListener('dragover', e => {
   e.preventDefault();
   uploadArea.classList.add('drag-over');
